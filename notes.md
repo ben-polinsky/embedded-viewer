@@ -16,8 +16,8 @@ Some browsers will not allow authentication within an iFrame due to security. Th
 
 ## Running the demo
 
-1. Clone the repo
-2. `cd` in repo directory
+1. Clone the repo and `cd` in repo directory
+2. Update the values in the .env file as you would with a normal Viewer app.
 3. run `npm install`
 4. run `npm start` to start the iTwin React Viewer on http://localhost:3000
 5. run `npm run start-host` to start the host application on http://localhost:8080 (this can be changed via package.json's `start-host` script. The `-c-1` flag is vital to ensure http-server doesn't cache your files.)
