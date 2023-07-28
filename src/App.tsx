@@ -5,7 +5,7 @@
 
 import "./App.scss";
 
-import type { ScreenViewport } from "@itwin/core-frontend";
+import type { IModelConnection, ScreenViewport } from "@itwin/core-frontend";
 import { FitViewTool, IModelApp, StandardViewId } from "@itwin/core-frontend";
 import { FillCentered } from "@itwin/core-react";
 import { ProgressLinear } from "@itwin/itwinui-react";
@@ -34,6 +34,19 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 
 import { Auth } from "./Auth";
 import { history } from "./history";
+import { Angle } from "@itwin/core-geometry";
+
+interface CameraPayload {
+  origin: {
+    x: number;
+    y: number;
+    z: number;
+  };
+  focusDistance: number;
+  lensAngle: number;
+}
+
+const targetOrigin = "http://localhost:8080"; // the origin of the host app
 
 const App: React.FC = () => {
   const [iModelId, setIModelId] = useState(process.env.IMJS_IMODEL_ID);
@@ -50,7 +63,7 @@ const App: React.FC = () => {
     try {
       await authClient.signInSilent();
     } catch {
-      await authClient.signIn();
+      await authClient.signInPopup();
     }
   }, [authClient]);
 
@@ -89,6 +102,7 @@ const App: React.FC = () => {
    * stored in the iModel. Delete this function and the prop that it is passed to if you prefer
    * to honor default views when they are present instead (the Viewer will still apply a similar function to iModels that do not have a default view).
    */
+
   const viewConfiguration = useCallback((viewPort: ScreenViewport) => {
     // default execute the fitview tool and use the iso standard view after tile trees are loaded
     const tileTreesLoaded = () => {
@@ -133,6 +147,27 @@ const App: React.FC = () => {
     MeasurementActionToolbar.setDefaultActionProvider();
   }, []);
 
+  const oniModelConnected = useCallback(
+    async (connection: IModelConnection) => {
+      IModelApp.viewManager.onViewOpen.addOnce((viewPort) => {
+        // Send 'ready' message to host app
+        if (window.parent) {
+          // we're running inside of an iFrame
+          if (viewPort.view.isSpatialView()) {
+            const camera = viewPort.view.camera;
+
+            sendMessageToHost<CameraPayload>("ready", {
+              origin: camera.getEyePoint(),
+              focusDistance: camera.getFocusDistance(),
+              lensAngle: camera.getLensAngle().degrees,
+            });
+          }
+        }
+      });
+    },
+    []
+  );
+
   return (
     <div className="viewer-container">
       {!accessToken && (
@@ -148,8 +183,9 @@ const App: React.FC = () => {
         changeSetId={changesetId}
         authClient={authClient}
         viewCreatorOptions={viewCreatorOptions}
-        enablePerformanceMonitors={true} // see description in the README (https://www.npmjs.com/package/@itwin/web-viewer-react)
+        enablePerformanceMonitors={false} // see description in the README (https://www.npmjs.com/package/@itwin/web-viewer-react)
         onIModelAppInit={onIModelAppInit}
+        onIModelConnected={oniModelConnected}
         uiProviders={[
           new ViewerNavigationToolsProvider(),
           new ViewerContentToolsProvider({
@@ -170,3 +206,39 @@ const App: React.FC = () => {
 };
 
 export default App;
+
+window.addEventListener("message", receiveMessageFromHost);
+
+// simple function to take action based on the message type
+function receiveMessageFromHost(e: MessageEvent) {
+  if (e.origin !== targetOrigin) return;
+  if (e.data.type === "changeCamera") {
+    updateCamera(e);
+  }
+}
+
+// convenience method to send a message type and data/payload to the host app
+function sendMessageToHost<PayloadType>(type: string, payload: PayloadType) {
+  window.parent.postMessage(
+    {
+      type,
+      payload,
+    },
+    "http://localhost:8080" // target (host app ) origin
+  );
+}
+
+function updateCamera(e: MessageEvent) {
+  const viewPort = IModelApp.viewManager.selectedView;
+  if (viewPort?.view.isSpatialView()) {
+    const { origin, focusDistance, lensAngle } = e.data.payload;
+    console.log(e.data.payload);
+    const camera = viewPort.view.camera;
+
+    if (origin) camera.setEyePoint(origin);
+    if (focusDistance) camera.setFocusDistance(focusDistance);
+    if (lensAngle) camera.setLensAngle(Angle.createDegrees(lensAngle));
+
+    viewPort.synchWithView();
+  }
+}

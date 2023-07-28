@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="index.css" />
+    <title>Host For Viewer</title>
+  </head>
+
+  <body>
+    <div id="app">
+      <div id="controls">
+        <p>Host App Controls</p>
+        <p>
+          <label for="focus-distance">Focus Distance</label>
+          <input
+            type="number"
+            name="focusDistance"
+            id="focus-distance"
+            value="10"
+          />
+        </p>
+        <p>
+          <label for="lens-angle">Lens Angle</label>
+          <input type="number" name="lensAngle" id="lens-angle" value="40" />
+        </p>
+        <p
+          ><label for="origin-x">Origin x</label
+          ><input type="number" name="origin_x" id="origin-x" value="50"
+        /></p>
+        <p
+          ><label for="origin-y">Origin Y</label
+          ><input type="number" name="origin_y" id="origin-y" value="100"
+        /></p>
+        <p
+          ><label for="origin-z">Origin Z</label
+          ><input type="number" name="origin_z" id="origin-z" value="10"
+        /></p>
+        <button disabled id="changeCamera">Change Camera</button>
+      </div>
+
+      <iframe src="http://localhost:3000" frameborder="0"></iframe>
+    </div>
+  </body>
+  <script type="module" src="./index.js"></script>
+</html>

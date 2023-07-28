@@ -1,0 +1,32 @@
+html,
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0px;
+  padding: 0px;
+}
+
+#app {
+  display: flex;
+  height: 100%;
+}
+
+iframe {
+  width: 100%;
+  height: 100%;
+}
+
+#controls {
+  border-left: 1px solid black;
+  padding: 20px;
+}
+
+#viewer {
+  background-color: green;
+  width: 100%;
+  height: 100%;
+}
+
+label {
+  display: block;
+}
